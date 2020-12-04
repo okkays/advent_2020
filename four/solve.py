@@ -1,17 +1,11 @@
 with open('input.txt', 'r') as f:
   corpus = f.read()
 
-
-def clean_passport(raw_passport):
-  passport = {}
-  for field in raw_passport.split():
-    key, value = field.split(':')
-    passport[key] = value
-  return passport
-
-
 raw_passports = corpus.split('\n\n')
-passports = [clean_passport(raw) for raw in raw_passports]
+passports = [
+    dict([field.split(':') for field in raw.split()])
+    for raw in raw_passports
+]
 
 required_fields = {
     'byr': lambda value: 1920 <= int(value) <= 2002,
