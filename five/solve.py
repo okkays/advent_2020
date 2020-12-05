@@ -20,7 +20,7 @@ def find_seat(ticket):
   col_steps = [c == 'R' for c in ticket if c in ['L', 'R']]
   row = search(row_steps)
   col = search(col_steps)
-  sid = (row * 8) + col
+  sid = (row * (len(row_steps) + 1)) + col
   print(row, col, sid)
   return sid
 
