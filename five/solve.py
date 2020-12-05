@@ -7,7 +7,7 @@ def search(steps, start=None, end=None):
   if start is None:
     start = 0
   if end is None:
-    end = 127
+    end = inc - 1
   if not steps:
     return start
   if steps[0]:
