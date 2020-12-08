@@ -28,11 +28,11 @@ def run(program, sub=None):
 
 
 print('----')
-run(input_program)
+print('part 1: ', run(input_program))
 
 
 sub_indices = (index for index, cmd
                in enumerate(input_program) if cmd[0] in ['jmp', 'nop'])
 runs = (run(input_program, sub=index) for index in sub_indices)
 valid_runs = (reg for status, reg in runs if status)
-print(next(valid_runs))
+print('part 2: ', next(valid_runs))
