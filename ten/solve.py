@@ -11,6 +11,7 @@ def get_counts(adapters):
   return counts
 
 counts = get_counts(all_adapters)
+print('part1', counts)
 
 class Node:
   def __init__(self, value):
@@ -38,4 +39,4 @@ for node in nodes.values():
     if node.value + i in nodes:
       node.children.append(nodes[node.value + i])
 
-print(nodes[0].count())
+print('part2', nodes[0].count())
