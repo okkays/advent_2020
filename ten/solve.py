@@ -11,7 +11,7 @@ def get_counts(adapters):
   return counts
 
 counts = get_counts(all_adapters)
-print('part1', counts)
+print('part1', counts[1] * counts[3])
 
 class Node:
   def __init__(self, value):
