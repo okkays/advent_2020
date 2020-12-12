@@ -7,15 +7,6 @@ with open('input.txt', 'r') as f:
 
 problem_instructions = [(r[0], int(r[1:])) for r in raw_instructions]
 
-
-# N means to move north by the given value.
-# S means to move south by the given value.
-# E means to move east by the given value.
-# W means to move west by the given value.
-# L means to turn left the given number of degrees.
-# R means to turn right the given number of degrees.
-# F means to move forward by the given value in the direction the ship is currently facing.
-
 class Point:
   def __init__(self, x, y):
     self.x = x
