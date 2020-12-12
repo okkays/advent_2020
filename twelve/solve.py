@@ -1,6 +1,8 @@
 import math
 
-with open('dummy.txt', 'r') as f:
+print()
+
+with open('input.txt', 'r') as f:
   raw_instructions = [f.strip() for f in f.readlines()]
 
 problem_instructions = [(r[0], int(r[1:])) for r in raw_instructions]
@@ -30,7 +32,9 @@ class Point:
     return Point(self.x - other.x, self.y - other.y)
 
   def __mul__(self, other):
-    return Point(self.x * other.x, self.y * other.y)
+    if isinstance(other, Point):
+      return Point(self.x * other.x, self.y * other.y)
+    return Point(self.x * other, self.y * other)
 
   def __repr__(self):
     return f'({self.x}, {self.y})'
@@ -44,36 +48,55 @@ assert Point(6, 2) * Point(3, 4) == Point(18, 8)
 assert Point(-6, 2).manhattan == 8
 
 class Ship:
-  def __init__(self):
+  def __init__(self, waypoint):
+    self.waypoint = waypoint
     self.position = Point(0, 0)
-    self.heading = 90
 
   def bulk_move(self, instructions):
     for instruction in instructions:
       self.move(instruction)
 
+  def rotate_waypoint(self, degrees):
+    cos_t = math.cos(math.radians(-degrees))
+    sin_t = math.sin(math.radians(-degrees))
+
+    new_x = cos_t * self.waypoint.x - sin_t * self.waypoint.y
+    new_y = sin_t * self.waypoint.x + cos_t * self.waypoint.y
+
+    new_waypoint = Point(round(new_x), round(new_y))
+    print(self.waypoint, new_waypoint)
+    self.waypoint = new_waypoint
+
   def move(self, instruction):
+    print(instruction, self.position, self.waypoint, self.position.manhattan)
     direction, amount = instruction
     if direction == 'N':
-      self.position += Point(amount, 0)
+      self.waypoint += Point(0, amount)
     elif direction == 'S':
-      self.position -= Point(amount, 0)
+      self.waypoint -= Point(0, amount)
     elif direction == 'E':
-      self.position += Point(0, amount)
+      self.waypoint += Point(amount, 0)
     elif direction == 'W':
-      self.position -= Point(0, amount)
+      self.waypoint -= Point(amount, 0)
     elif direction == 'L':
-      self.heading -= amount
+      self.rotate_waypoint(-amount)
     elif direction == 'R':
-      self.heading += amount
+      self.rotate_waypoint(amount)
     elif direction == 'F':
-      heading_x = math.cos(math.radians(self.heading))
-      heading_y = math.sin(math.radians(self.heading))
-      heading_points = Point(heading_x, heading_y)
-      self.position += Point(amount, amount) * heading_points
+      self.position += self.waypoint * amount
     else:
       raise ValueError('bad direction')
 
-ship = Ship()
+test_ship = Ship(Point(4, 10))
+test_ship.move(('R', 90))
+assert test_ship.waypoint == Point(10, -4)
+test_ship.move(('R', 90))
+assert test_ship.waypoint == Point(-4, -10)
+test_ship.move(('R', 90))
+assert test_ship.waypoint == Point(-10, 4)
+test_ship.move(('R', 90))
+assert test_ship.waypoint == Point(4, 10)
+
+ship = Ship(Point(10, 1))
 ship.bulk_move(problem_instructions)
 print(round(ship.position.manhattan))
