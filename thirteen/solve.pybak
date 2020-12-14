@@ -1,0 +1,58 @@
+print()
+with open('dummy.txt', 'r') as f:
+  raw = [l.strip()for l in f.readlines()]
+input_busses = [int(b) if b != 'x' else b for b in raw[1].split(',')]
+
+
+def normalize(busses, start):
+  return ((((start // b) + 1) * b) - start if b != 'x' else 'x' for b in busses)
+
+
+def part1(busses):
+  busses = [b for b in busses if b != 'x']
+  start = int(raw[0])
+  normalized_departures = list(normalize(busses, start))
+  wait = min(normalized_departures)
+  bus_id = busses[normalized_departures.index(wait)]
+  print('part1', bus_id, wait, bus_id * wait)
+
+
+part1(input_busses)
+
+
+def find_next_increment(increment, value):
+  mod = increment
+  while mod % value != 0:
+    mod += increment
+  return mod
+
+
+def part2(busses):
+  goal = [i for i, b in enumerate(busses) if b != 'x']
+  cleaned = [b for b in busses if b != 'x']
+  normalized = [c - g for c, g in zip(cleaned, goal)]
+  print(goal, cleaned, normalized)
+
+  # increment = normalized[0]
+  # for c in normalized[1:]:
+  #   increment = find_next_increment(increment, c)
+  #   print(c, increment)
+  # mod = max(normalized)
+
+
+#print('part2', part2(input_busses))
+
+with open('solutions.txt', 'r') as f:
+  raw_solutions = [l.strip() for l in f.readlines()]
+  solutions = []
+  for solution in raw_solutions:
+    problem, answer = solution.split('=')
+    problem = [int(p) if p != 'x' else p for p in problem.split(',')]
+    answer = int(answer)
+    solutions.append((problem, answer))
+
+for problem, answer in solutions:
+  goal = [i for i, b in enumerate(problem) if b != 'x']
+  cleaned = [b for b in problem if b != 'x']
+  normalized = [c - g for c, g in zip(cleaned, goal)]
+  print(cleaned, normalized, [(answer % n) for n in normalized])
