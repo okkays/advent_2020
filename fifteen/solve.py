@@ -1,5 +1,5 @@
 import collections
-print()
+print("=============")
 with open('input.txt', 'r') as f:
   problems = [l.strip().split(',') for l in f.readlines()]
   problems = [[int(p) for p in problem] for problem in problems]
@@ -20,6 +20,7 @@ def p1(problem, iterations=2020):
   return last_spoken
 
 
-print(p1(problems[0], 10))
+# print(p1(problems[0], 10))
 print('part1', [p1(problem, 2020) for problem in problems])
-# print('part2', p1([3, 2, 1], 30000000))
+# print(p1(problems[0], 200))
+print('part2', p1(problems[-1], 30000000))
