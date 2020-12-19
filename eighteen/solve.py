@@ -2,48 +2,37 @@ import string
 
 
 class Program:
-  def __init__(self, buffer):
-    self.buffer = iter(buffer)
-    self.register = 0
-    self.op = None
-
-  def eval(self, num):
-    if self.op == '+':
-      self.register += num
-    elif self.op == '*':
-      self.register *= num
-    self.op = None
-
-  def step(self):
-    char = next(self.buffer)
-    if char == ' ':
-      return
-    if char in string.digits:
-      if self.op is None:
-        self.register = int(char)
-        return
-      self.eval(int(char))
-      return
-    if char in ['+', '*']:
-      self.op = char
-      return
-    if char == '(':
-      sub_program = Program(self.buffer)
-      result = sub_program.run()
-      if self.op is None:
-        self.register = result
-        return
-      self.eval(result)
-      return
-    if char == ')':
-      raise StopIteration
+  def __init__(self, program):
+    self.lstack = []
+    self.rstack = program
+    self.register = None
 
   def run(self):
-    while True:
+    while self.rstack:
+      char = self.rstack.pop()
       try:
-        self.step()
-      except StopIteration:
+        num = int(char)
+      except ValueError:
+        num = None
+      if num is not None:
+        if self.lstack and self.lstack[-1] == '+':
+          self.lstack.pop()
+          self.lstack.append(num + self.lstack.pop())
+        else:
+          self.lstack.append(num)
+      elif char in '*+':
+        self.lstack.append(char)
+      elif char == '(':
+        self.rstack.append(Program(self.rstack).run())
+      elif char == ')':
         break
+    if self.register is None:
+      self.register = 1
+    while self.lstack:
+      char = self.lstack.pop()
+      if char == '*':
+        continue
+      self.register *= int(char)
     return self.register
 
 
@@ -53,7 +42,7 @@ def solve(filename):
 
   result = 0
   for program in programs:
-    program_result = Program(program).run()
+    program_result = Program(list(reversed(program.replace(' ', '')))).run()
     result += program_result
     print(program_result)
 
