@@ -45,19 +45,17 @@ def hash_grid(grid):
 
 
 def evaluate_cube(cube, active_cells, depth):
-  new_cube = make_empty_hcube(len(cube[0]))
+  new_cube = cube
   new_active_cells = []
   to_check = set(active_cells)
   for dims in active_cells:
     for diffs in itertools.product(*[range(-1, 2) for _ in dims]):
       to_check.add(tuple(dim + diff for dim, diff in zip(dims, diffs)))
   for cell in to_check:
-    row = cube
     new_row = new_cube
     for dim in reversed(cell[1:]):
       new_row = new_row[dim]
-      row = row[dim]
-    cell_status = row[cell[0]]
+    cell_status = cell in active_cells
     value = evaluate_cell(cube, cell_status, active_cells, *cell)
     new_row[cell[0]] = value
     if value:
@@ -110,5 +108,5 @@ def solve(filename, iterations, depth):
   return len(active_cells)
 
 
-print(solve('dummy.txt', 6, 2))
-# print(solve('input.txt', 6, 2))
+# print(solve('dummy.txt', 6, 2))
+print(solve('input.txt', 6, 2))
