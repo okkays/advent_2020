@@ -26,37 +26,39 @@ class Tile:
       return True
     return False
 
-  def rotate(self):
-    self.rotation = (self.rotation + 1) % 4
-
-  def flip_h(self):
-    self.flipped_h = not self.flipped_h
-
-  def flip_v(self):
-    self.flipped_v = not self.flipped_v
-
   def to_image(self):
     grid = list(self.grid)
     if self.flipped_v:
-      grid = grid[::-1]
-    if self.flipped_h:
-      grid = [''.join(reversed(row)) for row in grid]
+      grid = [''.join(reversed(r)) for r in grid]
+    for _ in range(self.rotation):
+      grid = [''.join(r) for r in zip(*reversed(grid))]
     return grid
+
+#   def _to_image(self):
+#     grid = list(self.grid)
+#     if not self.flipped_v:
+#       grid = grid[::-1]
+#     if not self.flipped_h:
+#       grid = [''.join(reversed(r)) for r in grid]
+#     for _ in range(4 - self.rotation):
+#       grid = [''.join(r) for r in zip(*reversed(grid))]
+#     return grid
 
   def get_full(self):
     grid = []
     leftmost = self
     while leftmost is not None:
       row = leftmost.get_row()
-      rows.append(leftmost)
+      grid.append(row)
       leftmost = leftmost.get_node(BORDERS['south'])
+    return grid
 
   def get_row(self):
-    row = [self]
+    row = []
     node = self
     while node is not None:
-      node = node.get_node(BORDERS['east'])
       row.append(node)
+      node = node.get_node(BORDERS['east'])
     return row
 
   @property
@@ -129,6 +131,9 @@ class Tile:
       BORDERS['west']: None,
     }
 
+  def __repr__(self):
+    return f'<{self.num}: r{self.rotation} h{int(self.flipped_h)} v{int(self.flipped_v)}>'
+
   def __str__(self):
     north = self.get_node(BORDERS['north'])
     north_num = north.num if north else '    '
@@ -145,8 +150,14 @@ class Tile:
             f'     {south_num}    \n')
 
 
-def join_image(northwest):
-  pass
+def join_row(row):
+  joined_grid = list(zip(*[tile.to_image() for tile in row]))
+  result = []
+  for row in joined_grid:
+    result.append(' '.join(row))
+  return '\n'.join(result)
+
+
 
 
 def solve(filename):
@@ -179,15 +190,13 @@ def solve(filename):
   corners = [tile.num for tile in solved if tile.is_corner]
   print('part1', functools.reduce(lambda a, b: a * b, corners))
 
-  print('\n'.join([str(s) for s in solved]))
-  # leftmost = next(tile for tile in solved if tile.is_northwest)
-  # rows = []
-  # print(leftmost)
-
-  # top_row = leftmost.get_row()
-  # print(top_row)
-  # print([n.to_image() for n in top_row])
-  # print('\n'.join(leftmost.to_image()))
+  leftmost = next(tile for tile in solved if tile.is_northwest)
+  grid = leftmost.get_full()
+  for row in grid:
+    print(''.join([str(c) for c in row]))
+    print(row)
+  image = '\n\n'.join([join_row(row) for row in grid])
+  print(image)
 
   print('done')
 
