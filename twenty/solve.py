@@ -1,20 +1,26 @@
 import itertools
 import functools
+import numpy
 print()
 print('============')
 
 BORDERS = {
-  'north': 0,
-  'east': 1,
-  'south': 2,
-  'west': 3,
+    'north': 0,
+    'east': 1,
+    'south': 2,
+    'west': 3,
 }
 
+
 class Tile:
-  def orient(self, rotation, flipped_h, flipped_v):
-    self.rotation = rotation
-    self.flipped_h = bool(flipped_h)
-    self.flipped_v = bool(flipped_v)
+  def orient(self, rotate, flip_v, flip_h):
+    array = [list(row) for row in self.grid]
+    if flip_v:
+      array = numpy.flipud(array)
+    if flip_h:
+      array = numpy.fliplr(array)
+    array = numpy.rot90(array, rotate)
+    return Tile(self.num, [''.join(row) for row in array])
 
   def try_match_fixed(self, other_tile):
     for this_border in BORDERS.values():
@@ -26,31 +32,13 @@ class Tile:
       return True
     return False
 
-  def to_image(self):
-    grid = list(self.grid)
-    if self.flipped_v:
-      grid = [''.join(reversed(r)) for r in grid]
-    for _ in range(self.rotation):
-      grid = [''.join(r) for r in zip(*reversed(grid))]
-    return grid
-
-#   def _to_image(self):
-#     grid = list(self.grid)
-#     if not self.flipped_v:
-#       grid = grid[::-1]
-#     if not self.flipped_h:
-#       grid = [''.join(reversed(r)) for r in grid]
-#     for _ in range(4 - self.rotation):
-#       grid = [''.join(r) for r in zip(*reversed(grid))]
-#     return grid
-
   def get_full(self):
     grid = []
     leftmost = self
     while leftmost is not None:
       row = leftmost.get_row()
       grid.append(row)
-      leftmost = leftmost.get_node(BORDERS['south'])
+      leftmost = leftmost.nodes[BORDERS['south']]
     return grid
 
   def get_row(self):
@@ -58,7 +46,7 @@ class Tile:
     node = self
     while node is not None:
       row.append(node)
-      node = node.get_node(BORDERS['east'])
+      node = node.nodes[BORDERS['east']]
     return row
 
   @property
@@ -67,104 +55,88 @@ class Tile:
 
   @property
   def is_corner(self):
-    north = bool(self.get_node(BORDERS['north']))
-    south = bool(self.get_node(BORDERS['south']))
-    east = bool(self.get_node(BORDERS['east']))
-    west = bool(self.get_node(BORDERS['west']))
+    north = bool(self.nodes[BORDERS['north']])
+    south = bool(self.nodes[BORDERS['south']])
+    east = bool(self.nodes[BORDERS['east']])
+    west = bool(self.nodes[BORDERS['west']])
     result = ((north and east) ^
-            (east and south) ^
-            (south and west) ^
-            (north and west))
+              (east and south) ^
+              (south and west) ^
+              (north and west))
     return result
 
   @property
   def is_northwest(self):
-    north = bool(self.get_node(BORDERS['north']))
-    south = bool(self.get_node(BORDERS['south']))
-    east = bool(self.get_node(BORDERS['east']))
-    west = bool(self.get_node(BORDERS['west']))
+    north = bool(self.nodes[BORDERS['north']])
+    south = bool(self.nodes[BORDERS['south']])
+    east = bool(self.nodes[BORDERS['east']])
+    west = bool(self.nodes[BORDERS['west']])
     return east and south and not west and not north
 
   def __setitem__(self, direction, node):
     if isinstance(direction, str):
       raise ValueError('use int')
-    self.nodes[(direction + self.rotation) % 4] = node
+    self.nodes[direction] = node
 
   def __getitem__(self, direction):
     if isinstance(direction, str):
       raise ValueError('use int')
-    num = (direction + self.rotation) % 4
-    border = self.borders[num]
-    if num in [BORDERS['north'], BORDERS['south']] and self.flipped_v:
-      return ''.join(reversed(border))
-    if num in [BORDERS['east'], BORDERS['west']] and self.flipped_h:
-      return ''.join(reversed(border))
+    border = self.borders[direction]
     return border
 
-  def get_node(self, direction):
-    if self.flipped_v:
-      if direction == BORDERS['east']:
-        direction = BORDERS['west']
-      elif direction == BORDERS['west']:
-        direction = BORDERS['east']
-    return self.nodes[(direction + self.rotation) % 4]
-
-  def __init__(self, raw):
-    lines = [l for l in raw.strip().split('\n') if l]
-    self.flipped_h = False
-    self.flipped_v = False
-    self.rotation = 0
-    self.num = int(lines[0].strip(':').split(' ')[1])
-    self.grid = lines[1:]
+  def __init__(self, num, grid):
+    self.num = num
+    self.grid = grid
 
     self.borders = {
-      BORDERS['north']: lines[1],
-      BORDERS['east']: ''.join([r[-1] for r in lines[1:]]),
-      BORDERS['south']: lines[-1],
-      BORDERS['west']: ''.join([r[0] for r in lines[1:]]),
+        BORDERS['north']: grid[0],
+        BORDERS['east']: ''.join([r[-1] for r in grid]),
+        BORDERS['south']: grid[-1],
+        BORDERS['west']: ''.join([r[0] for r in grid]),
     }
 
     self.nodes = {
-      BORDERS['north']: None,
-      BORDERS['east']: None,
-      BORDERS['south']: None,
-      BORDERS['west']: None,
+        BORDERS['north']: None,
+        BORDERS['east']: None,
+        BORDERS['south']: None,
+        BORDERS['west']: None,
     }
 
   def __repr__(self):
-    return f'<{self.num}: r{self.rotation} h{int(self.flipped_h)} v{int(self.flipped_v)}>'
+    return f'<{self.num}>'
 
   def __str__(self):
-    north = self.get_node(BORDERS['north'])
+    north = self.nodes[BORDERS['north']]
     north_num = north.num if north else '    '
-    south = self.get_node(BORDERS['south'])
+    south = self.nodes[BORDERS['south']]
     south_num = south.num if south else '    '
-    east = self.get_node(BORDERS['east'])
+    east = self.nodes[BORDERS['east']]
     east_num = east.num if east else '    '
-    west = self.get_node(BORDERS['west'])
+    west = self.nodes[BORDERS['west']]
     west_num = west.num if west else '    '
-    this = self.num
-    return (f'(h: {self.flipped_h}, v: {self.flipped_v}, r: {self.rotation}):\n'
-            f'     {north_num}    \n'
+    return (f'     {north_num}    \n'
             f'{west_num} {self.num} {east_num}\n'
             f'     {south_num}    \n')
 
 
 def join_row(row):
-  joined_grid = list(zip(*[tile.to_image() for tile in row]))
+  joined_grid = list(zip(*[tile.grid for tile in row]))
   result = []
-  for row in joined_grid:
-    result.append(' '.join(row))
+  for joined_row in joined_grid:
+    result.append(' '.join(joined_row))
   return '\n'.join(result)
-
-
 
 
 def solve(filename):
   with open(filename, 'r') as f:
     raw = f.read()
   raw_tiles = raw.split('\n\n')
-  tiles = [Tile(raw_tile) for raw_tile in raw_tiles]
+  tiles = []
+  for raw_tile in raw_tiles:
+    lines = [l for l in raw_tile.strip().split('\n') if l]
+    num = int(lines[0].strip(':').split(' ')[1])
+    grid = lines[1:]
+    tiles.append(Tile(num, grid))
 
   solved = [tiles.pop()]
   left_tiles = tiles
@@ -172,22 +144,24 @@ def solve(filename):
   while left_tiles or right_tiles:
     while left_tiles:
       other_tile = left_tiles.pop()
-      matches_to_orients = {}
+      max_tile = None
+      max_matches = 0
       for orients in itertools.product(range(4), range(2), range(2)):
         matches = 0
-        other_tile.orient(*orients)
+        oriented = other_tile.orient(*orients)
         for solved_tile in solved:
-          matches += int(solved_tile.try_match_fixed(other_tile))
-        if matches:
-          matches_to_orients[matches] = orients
-      if not matches_to_orients:
+          matches += int(solved_tile.try_match_fixed(oriented))
+        if matches > max_matches:
+          max_tile = oriented
+          max_matches = matches
+      if not max_matches:
         right_tiles.append(other_tile)
       else:
-        other_tile.orient(*matches_to_orients[max(matches_to_orients)])
-        solved.append(other_tile)
+        solved.append(max_tile)
     left_tiles, right_tiles = right_tiles, left_tiles
 
   corners = [tile.num for tile in solved if tile.is_corner]
+  print(''.join([str(s) for s in solved]))
   print('part1', functools.reduce(lambda a, b: a * b, corners))
 
   leftmost = next(tile for tile in solved if tile.is_northwest)
@@ -200,4 +174,5 @@ def solve(filename):
 
   print('done')
 
-solve('dummy.txt')
+
+solve('input.txt')
