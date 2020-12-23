@@ -51,6 +51,10 @@ class Tile:
     return row
 
   @property
+  def image(self):
+    return [row[1:-1] for row in self.grid[1:-1]]
+
+  @property
   def is_complete(self):
     return all(self.nodes.values())
 
@@ -126,10 +130,10 @@ class Tile:
 
 
 def join_row(row):
-  joined_grid = list(zip(*[tile.grid for tile in row]))
+  joined_grid = list(zip(*[tile.image for tile in row]))
   result = []
   for joined_row in joined_grid:
-    result.append(' '.join(joined_row))
+    result.append(''.join(joined_row))
   return '\n'.join(result)
 
 
@@ -205,10 +209,10 @@ def solve(filename):
 
   leftmost = next(tile for tile in solved if tile.is_northwest)
   grid = leftmost.get_full()
-  image = '\n\n'.join([join_row(row) for row in grid])
+  image = '\n'.join([join_row(row) for row in grid])
   print(image)
 
   print('done')
 
 
-solve('input.txt')
+solve('dummy.txt')
