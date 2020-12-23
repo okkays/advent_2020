@@ -1,3 +1,4 @@
+import collections
 import itertools
 import functools
 import numpy
@@ -84,6 +85,11 @@ class Tile:
     border = self.borders[direction]
     return border
 
+  def clone(self):
+    new = Tile(self.num, list(self.grid))
+    new.nodes = self.nodes
+    return new
+
   def __init__(self, num, grid):
     self.num = num
     self.grid = grid
@@ -127,6 +133,45 @@ def join_row(row):
   return '\n'.join(result)
 
 
+def place(tiles):
+  solved = [tiles.pop()]
+  left_tiles = tiles
+  right_tiles = []
+  while left_tiles or right_tiles:
+    while left_tiles:
+      other_tile = left_tiles.pop()
+      max_tile = None
+      max_matches = 0
+      max_solved = []
+      for orients in itertools.product(range(4), range(2), range(2)):
+        matches = 0
+        oriented = other_tile.orient(*orients)
+        solved_clone = [s.clone() for s in solved]
+        for solved_tile in solved_clone:
+          matches += int(solved_tile.try_match_fixed(oriented))
+        if matches > max_matches:
+          max_tile = oriented
+          max_matches = matches
+          max_solved = solved_clone
+      if not max_matches:
+        right_tiles.append(other_tile)
+      else:
+        solved = max_solved
+        solved.append(max_tile)
+    left_tiles, right_tiles = right_tiles, left_tiles
+
+  # Clean up references
+  tiles = {}
+  for s in solved:
+    tiles[s.num] = s
+  for s in solved:
+    for direction, node in s.nodes.items():
+      if not node:
+        continue
+      s[direction] = tiles[node.num]
+  return solved
+
+
 def solve(filename):
   with open(filename, 'r') as f:
     raw = f.read()
@@ -138,37 +183,28 @@ def solve(filename):
     grid = lines[1:]
     tiles.append(Tile(num, grid))
 
-  solved = [tiles.pop()]
-  left_tiles = tiles
-  right_tiles = []
-  while left_tiles or right_tiles:
-    while left_tiles:
-      other_tile = left_tiles.pop()
-      max_tile = None
-      max_matches = 0
-      for orients in itertools.product(range(4), range(2), range(2)):
-        matches = 0
-        oriented = other_tile.orient(*orients)
-        for solved_tile in solved:
-          matches += int(solved_tile.try_match_fixed(oriented))
-        if matches > max_matches:
-          max_tile = oriented
-          max_matches = matches
-      if not max_matches:
-        right_tiles.append(other_tile)
-      else:
-        solved.append(max_tile)
-    left_tiles, right_tiles = right_tiles, left_tiles
+  borders = collections.defaultdict(lambda: 0)
+  for tile in tiles:
+    for border in tile.borders.values():
+      borders[border] += 1
 
-  corners = [tile.num for tile in solved if tile.is_corner]
+  print('border match counts', set(borders.values()))
+
+  print('num tiles', len(tiles))
+  solved = place(tiles)
+  for s in solved:
+    print(s.nodes)
+
+  corners = [tile for tile in solved if tile.is_corner]
+  c_nums = [c.num for c in corners]
+  print('SOLVED:')
   print(''.join([str(s) for s in solved]))
-  print('part1', functools.reduce(lambda a, b: a * b, corners))
+  print('CORNERS:')
+  print(''.join([str(s) for s in corners]))
+  print('part1', functools.reduce(lambda a, b: a * b, c_nums))
 
   leftmost = next(tile for tile in solved if tile.is_northwest)
   grid = leftmost.get_full()
-  for row in grid:
-    print(''.join([str(c) for c in row]))
-    print(row)
   image = '\n\n'.join([join_row(row) for row in grid])
   print(image)
 
