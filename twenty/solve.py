@@ -2,6 +2,7 @@ import collections
 import itertools
 import functools
 import numpy
+import re
 print()
 print('============')
 
@@ -206,13 +207,57 @@ def solve(filename):
   print('CORNERS:')
   print(''.join([str(s) for s in corners]))
   print('part1', functools.reduce(lambda a, b: a * b, c_nums))
+  return corners
 
-  leftmost = next(tile for tile in solved if tile.is_northwest)
+
+def find_indexes(regexes, grid):
+  rowspan = len(regexes)
+  num_monsters = 0
+  for row_index in range(len(grid) - (rowspan - 1)):
+    rows = grid[row_index:row_index + rowspan]
+    matches = [{r.start(1) for r in regex.finditer(row)}
+               for regex, row in zip(regexes, rows)]
+    monsters = set.intersection(*matches)
+    # print('monster: ', row_index, matches, monsters)
+    num_monsters += len(monsters)
+  return num_monsters
+
+
+def solve2(corners, monster):
+  leftmost = next(tile for tile in corners if tile.is_northwest)
   grid = leftmost.get_full()
-  image = '\n'.join([join_row(row) for row in grid])
+  joined = [join_row(row) for row in grid]
+  image = '\n'.join(joined)
   print(image)
+  regexes = []
+  for line in monster:
+    regex = line.replace(' ', '.')
+    regexes.append(re.compile(f'(?=({regex}))'))
+  sea = image.split('\n')
+  for rotate, fliph, flipv in itertools.product(range(4), range(2), range(2)):
+    sea_copy = list(list(s) for s in sea)
+    sea_copy = numpy.rot90(sea_copy, rotate)
+    if fliph:
+      sea_copy = numpy.fliplr(sea_copy)
+    if flipv:
+      sea_copy = numpy.flipud(sea_copy)
+    sea_copy = [''.join(s) for s in sea_copy]
+    monsters = find_indexes(regexes, sea_copy)
+    if monsters:
+      break
 
-  print('done')
+  num_per_monster = sum(1 for c in ''.join(monster) if c == '#')
+  num_in_sea = sum(1 for c in ''.join(sea) if c == '#')
+  print(num_per_monster, monsters, num_in_sea - (monsters * num_per_monster))
 
 
-solve('dummy.txt')
+corners = solve('input.txt')
+monster = [
+    "                  # ",
+    "#    ##    ##    ###",
+    " #  #  #  #  #  #   ",
+
+
+]
+solve2(corners, monster)
+print('done')
