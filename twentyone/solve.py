@@ -32,12 +32,19 @@ def solve(filename):
   pairs = readinput(filename)
   pairs.sort(key=lambda p: -len(p[1]))
   all_ingredients = set.union(*[p[0] for p in pairs])
-  reduced = set.union(*reduce(pairs).values())
-  allergenless = all_ingredients - reduced
-  num_occurences = 0
-  for ingredients, _ in pairs:
-    num_occurences += len(allergenless & set(ingredients))
-  print(num_occurences)
+  reduced = list(reduce(pairs).items())
+  solution = {}
+  while reduced:
+    reduced.sort(key=lambda p: len(p[1]))
+    next_reduced = []
+    allergen, ingredients = reduced.pop(0)
+    solution[allergen] = ingredients
+    for other_allergen, other_ingredients in reduced:
+      next_reduced.append((other_allergen, other_ingredients - ingredients))
+    reduced = next_reduced
+  solution = list(sorted(solution.items(), key=lambda i: i[0]))
+  solution = [s[1].pop() for s in solution]
+  print('solution', ','.join(solution))
 
 
 solve('input.txt')
