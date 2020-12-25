@@ -1,4 +1,6 @@
+import cProfile
 import collections
+print()
 
 compass = ['e', 'se', 'sw', 'w', 'nw', 'ne']
 reductions = [
@@ -44,41 +46,53 @@ def reduce(direction):
       changed = True
     if not changed:
       break
-  return tuple(sorted(direction))
+  return list(sorted(direction))
 
 
 def remove_duplicates(directions):
   counts = collections.defaultdict(lambda: 0)
   for direction in directions:
-    counts[direction] += 1
-  return {direction for direction, count in counts.items() if count % 2 != 0}
+    counts[tuple(direction)] += 1
+  return [list(d) for d, count in counts.items() if count % 2 != 0]
 
 
 def get_adjacents(direction):
   return [reduce(direction + [c]) for c in compass]
 
 
-def should_flip(direction, black_tiles):
+def should_be_black(direction, black_tiles):
+  black_tiles = {tuple(b) for b in black_tiles}
   neighbors = get_adjacents(direction)
-  black_neighbors = sum(1 for n in neighbors if n in black_tiles)
-  is_black = direction in black_tiles
-  if is_black and black_neighbors == 0 or black_neighbors > 2:
-    return True
-  if not is_black and black_neighbors == 2:
-    return True
-  return False
+  black_neighbors = sum(1 for n in neighbors if tuple(n) in black_tiles)
+  is_black = tuple(direction) in black_tiles
+  if is_black:
+    return not (black_neighbors == 0 or black_neighbors > 2)
+  return black_neighbors == 2
 
 
-def step(directions):
-  reduced = [reduce(direction) for direction in directions]
-  unique_reduced = remove_duplicates(reduced)
-  print(len(reduced), len(unique_reduced))
+def step(black_tiles):
+  to_check = []
+  for black in black_tiles:
+    to_check.extend(get_adjacents(black))
+  reduced = {tuple(reduce(d)) for d in to_check}
+  reduced = [list(d) for d in reduced]
+  stepped = [d for d in reduced if should_be_black(d, black_tiles)]
+  deduped = remove_duplicates(stepped)
+  return deduped
 
 
 def solve(filename):
   directions = read_directions(filename)
-  # print(directions)
-  step(directions)
+  reduced = [reduce(direction) for direction in directions]
+  unique_reduced = remove_duplicates(reduced)
+  print('part1: ', len(unique_reduced))
+  directions = unique_reduced
+  for i in range(100):
+    directions = step(directions)
+    print(i, len(directions))
 
 
+# solve('dummy.txt')
 solve('input.txt')
+# cProfile.run("solve('dummy.txt')")
+print('done')
